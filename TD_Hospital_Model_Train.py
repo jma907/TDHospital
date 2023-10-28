@@ -5,17 +5,48 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from tensorflow import keras
 from tensorflow.keras import layers
+from sklearn.preprocessing import OneHotEncoder
 
 
 def data_preprocessing(df):
+    '''    
+    Preprocesses the data by:
+    - Keeping specified columns
+    - Replacing empty strings and NaN values with 0
+    - One-hot encoding categorical columns
+    '''
     
-    col_to_keep = ['death', 'age', 'blood', 'reflex', 'bloodchem1', 'bloodchem2', 'psych1', 'glucose']
+    col_to_keep = [
+        'bloodchem3', 'bloodchem6',
+        'sleep', 'bloodchem5', 'education', 'disability', 'totalcost', 'confidence',
+        'blood', 'administratorcost', 'psych5', 'bloodchem2', 'race', 'dnr', 
+        'information', 'timeknown', 'diabetes', 'psych6', 'cancer', 'extraprimary',
+        'age', 'primary', 'pain', 'meals', 'breathing', 'comorbidity', 'bp',
+        'psych3', 'dose', 'psych1', 'heart', 'temperature', 'sex', 'reflex', 'death'
+    ]
+    
     df = df[col_to_keep]
-
     df.replace('', 0, inplace=True)
     df.fillna(0, inplace=True)
-    return df
     
+    # Identify categorical columns that need one-hot encoding
+    categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+    
+    # Convert all categorical columns to string type
+    df[categorical_cols] = df[categorical_cols].astype(str)
+    
+    # Apply one-hot encoding
+    encoder = OneHotEncoder(drop='first', sparse=False)
+    encoded_cols = encoder.fit_transform(df[categorical_cols])
+    encoded_df = pd.DataFrame(encoded_cols, columns=encoder.get_feature_names_out(categorical_cols))
+    
+    # Merge one-hot encoded columns with the original dataframe and drop original categorical columns
+    df = pd.concat([df, encoded_df], axis=1).drop(columns=categorical_cols)
+    
+    return df
+
+# Test the function on the data
+
 def split_feature_label(df):
     y = df['death']
     X = df.drop(columns=['death'])
